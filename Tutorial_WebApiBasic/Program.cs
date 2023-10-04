@@ -3,6 +3,7 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Tutorial_WebApiBasic.Infrastructure;
 using Microsoft.AspNetCore.Builder;
+using Tutorial_WebApiBasic.Injectables;
 
 // try catch 를 사용하지 않고 Serilog 를 사용하여 예외를 처리한다.
 //var configuration = new ConfigurationBuilder()
@@ -29,7 +30,27 @@ using Microsoft.AspNetCore.Builder;
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
     });
 
-    var app = builder.Build();
+    // 3. 의존성 주입(DI) - Scrutor사용하여 
+    // IInjectableService에 (Transient, Scoped, Singleton) 인터페이스를 상속받은 클래스를 주입한다.
+    builder.Services.Scan(scan => scan
+            //.FromCallingAssembly()
+            .FromAssemblies(typeof(Program).Assembly)
+            //.FromAssemblies(AssemblyHelper.GetAllAssemblies(SearchOption.TopDirectoryOnly))
+            //.FromAssemblyOf<ITransientService>()
+            .AddClasses(classes => classes.AssignableTo<ITransientService>())
+            .AsImplementedInterfaces()
+            .WithTransientLifetime() // Transient
+            //.FromAssemblyOf<IScopedService>() 
+            .AddClasses(classes => classes.AssignableTo<IScopedService>())
+            .AsImplementedInterfaces()
+            .WithScopedLifetime() // Scoped
+            //.FromAssemblyOf<ISingletonService>()
+            .AddClasses(classes => classes.AssignableTo<ISingletonService>())
+            .AsImplementedInterfaces()
+            .WithSingletonLifetime() // Singleton
+    );
+
+var app = builder.Build();
     app.UseSwagger();
     app.UseSwaggerUI();
     app.MapControllers();
