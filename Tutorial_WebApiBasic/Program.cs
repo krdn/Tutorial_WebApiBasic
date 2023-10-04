@@ -1,16 +1,17 @@
 using Serilog;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
+using Tutorial_WebApiBasic.Infrastructure;
 
+// try catch 를 사용하지 않고 Serilog 를 사용하여 예외를 처리한다.
+//var configuration = new ConfigurationBuilder()
+//    .AddJsonFile("appsettings.json", false, true)
+//    .AddJsonFile("appsettings.Development.json", optional: true)
+//    .Build();
 
-var configuration = new ConfigurationBuilder()
-    .AddJsonFile("appsettings.json", false, true)
-    .AddJsonFile("appsettings.Development.json", optional: true)
-    .Build();
-
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(configuration)
-    .CreateBootstrapLogger();
-
+//Log.Logger = new LoggerConfiguration()
+//    .ReadFrom.Configuration(configuration)
+//    .CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -21,6 +22,11 @@ builder.Services.AddSwaggerGen();
 builder.Host.UseSerilog((ctx, lc) => lc.ReadFrom.Configuration(ctx.Configuration));
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+
+builder.Services.AddDbContext<MyDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
 
 var app = builder.Build();
 
