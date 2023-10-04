@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Tutorial_WebApiBasic.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Tutorial_WebApiBasic.Injectables;
+using Tutorial_WebApiBasic.Middleware;
 
 // try catch 를 사용하지 않고 Serilog 를 사용하여 예외를 처리한다.
 //var configuration = new ConfigurationBuilder()
@@ -53,6 +54,7 @@ using Tutorial_WebApiBasic.Injectables;
 var app = builder.Build();
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseMiddleware<ApiLoggingMiddleware>();
     app.MapControllers();
 
     // https://learn.microsoft.com/ko-kr/aspnet/core/mvc/controllers/routing?view=aspnetcore-7.0
