@@ -1,8 +1,10 @@
 using Serilog;
 using System.Reflection;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Tutorial_WebApiBasic.Infrastructure;
 using Microsoft.AspNetCore.Builder;
+using Tutorial_WebApiBasic.Behaviors;
 using Tutorial_WebApiBasic.Injectables;
 using Tutorial_WebApiBasic.Middleware;
 
@@ -26,14 +28,17 @@ using Tutorial_WebApiBasic.Middleware;
     // https://learn.microsoft.com/ko-kr/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-7.0
     builder.Host.UseSerilog((ctx, lc) => lc.ReadFrom.Configuration(ctx.Configuration));
     builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
-    builder.Services.AddDbContext<MyDbContext>(options =>
-    {
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-    });
+    builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(MediatRLoggingBehavior<,>));
 
-    // 3. 의존성 주입(DI) - Scrutor사용하여 
-    // IInjectableService에 (Transient, Scoped, Singleton) 인터페이스를 상속받은 클래스를 주입한다.
-    builder.Services.Scan(scan => scan
+    builder.Services.AddDbContext<MyDbContext>(options =>
+        {
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+        });
+
+
+// 3. 의존성 주입(DI) - Scrutor사용하여 
+// IInjectableService에 (Transient, Scoped, Singleton) 인터페이스를 상속받은 클래스를 주입한다.
+builder.Services.Scan(scan => scan
             //.FromCallingAssembly()
             .FromAssemblies(typeof(Program).Assembly)
             //.FromAssemblies(AssemblyHelper.GetAllAssemblies(SearchOption.TopDirectoryOnly))
