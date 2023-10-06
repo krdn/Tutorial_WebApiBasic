@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Tutorial_WebApiBasic.Behaviors;
 using Tutorial_WebApiBasic.Injectables;
 using Tutorial_WebApiBasic.Middleware;
+using Tutorial_WebApiBasic.Extensions;
 
 // try catch 를 사용하지 않고 Serilog 를 사용하여 예외를 처리한다.
 //var configuration = new ConfigurationBuilder()
@@ -21,44 +22,16 @@ using Tutorial_WebApiBasic.Middleware;
 //try
 //{
 
-    var builder = WebApplication.CreateBuilder(args);
-    builder.Services.AddControllers();
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+var builder = WebApplication.CreateBuilder(args);
+    builder.Services.InitControllerAndSwagger();
     // https://learn.microsoft.com/ko-kr/aspnet/core/fundamentals/host/generic-host?view=aspnetcore-7.0
-    builder.Host.UseSerilog((ctx, lc) => lc.ReadFrom.Configuration(ctx.Configuration));
-    builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
-    builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(MediatRLoggingBehavior<,>));
-
-    builder.Services.AddDbContext<MyDbContext>(options =>
-        {
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-        });
-
-
-// 3. 의존성 주입(DI) - Scrutor사용하여 
-// IInjectableService에 (Transient, Scoped, Singleton) 인터페이스를 상속받은 클래스를 주입한다.
-builder.Services.Scan(scan => scan
-            //.FromCallingAssembly()
-            .FromAssemblies(typeof(Program).Assembly)
-            //.FromAssemblies(AssemblyHelper.GetAllAssemblies(SearchOption.TopDirectoryOnly))
-            //.FromAssemblyOf<ITransientService>()
-            .AddClasses(classes => classes.AssignableTo<ITransientService>())
-            .AsImplementedInterfaces()
-            .WithTransientLifetime() // Transient
-            //.FromAssemblyOf<IScopedService>() 
-            .AddClasses(classes => classes.AssignableTo<IScopedService>())
-            .AsImplementedInterfaces()
-            .WithScopedLifetime() // Scoped
-            //.FromAssemblyOf<ISingletonService>()
-            .AddClasses(classes => classes.AssignableTo<ISingletonService>())
-            .AsImplementedInterfaces()
-            .WithSingletonLifetime() // Singleton
-    );
+    builder.Services.AddSerilog();
+    builder.Services.InitMediatR();
+    builder.Services.AddAccessDb(builder.Configuration.GetConnectionString("DefaultConnection"));
+    builder.Services.InitScrutor();
 
 var app = builder.Build();
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerAndSwaggerUI();
     app.UseMiddleware<ApiLoggingMiddleware>();
     app.MapControllers();
 
